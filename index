@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sprite Studio Mobile</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col p-4 select-none">
 
@@ -65,26 +65,26 @@
             
             <div class="bg-gray-800 p-4 rounded-xl shadow-xl flex flex-col items-center">
                 <h2 class="text-md font-semibold mb-2 self-start text-gray-300">Live Animation Engine Monitor</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center justify-items-center bg-gray-950 p-6 rounded-lg border border-gray-700 w-full checkered-bg">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 items-center justify-items-center bg-gray-950 p-6 rounded-lg border border-gray-700 w-full checkered-bg">
                     
-                    <div class="flex flex-col items-center bg-gray-900/90 p-3 rounded-lg border border-gray-800 shadow-inner">
+                    <div class="flex flex-col items-center bg-gray-900/90 p-3 rounded-lg border border-gray-800 shadow-inner w-full">
                         <canvas id="previewCanvasRight" width="64" height="64" class="w-16 h-16 bg-gray-950 rounded border border-gray-800 object-contain image-render-pixel"></canvas>
-                        <span class="text-[10px] text-indigo-300 font-bold mt-1.5 uppercase">Right (Row 0)</span>
+                        <span class="text-[10px] text-indigo-300 font-bold mt-1.5 uppercase text-center">Right (Row 0)</span>
                     </div>
 
-                    <div class="flex flex-col items-center bg-gray-900/90 p-3 rounded-lg border border-gray-800 shadow-inner">
+                    <div class="flex flex-col items-center bg-gray-900/90 p-3 rounded-lg border border-gray-800 shadow-inner w-full">
                         <canvas id="previewCanvasLeft" width="64" height="64" class="w-16 h-16 bg-gray-950 rounded border border-gray-800 object-contain image-render-pixel"></canvas>
-                        <span class="text-[10px] text-indigo-300 font-bold mt-1.5 uppercase">Left (Row 1)</span>
+                        <span class="text-[10px] text-indigo-300 font-bold mt-1.5 uppercase text-center">Left (Row 1)</span>
                     </div>
 
-                    <div class="flex flex-col items-center bg-gray-900/90 p-3 rounded-lg border border-gray-800 shadow-inner">
+                    <div class="flex flex-col items-center bg-gray-900/90 p-3 rounded-lg border border-gray-800 shadow-inner w-full">
                         <canvas id="previewCanvasDown" width="64" height="64" class="w-16 h-16 bg-gray-950 rounded border border-gray-800 object-contain image-render-pixel"></canvas>
-                        <span class="text-[10px] text-emerald-300 font-bold mt-1.5 uppercase">Down (Row 2)</span>
+                        <span class="text-[10px] text-emerald-300 font-bold mt-1.5 uppercase text-center">Down (Row 2)</span>
                     </div>
 
-                    <div class="flex flex-col items-center bg-gray-900/90 p-3 rounded-lg border border-gray-800 shadow-inner">
+                    <div class="flex flex-col items-center bg-gray-900/90 p-3 rounded-lg border border-gray-800 shadow-inner w-full">
                         <canvas id="previewCanvasUp" width="64" height="64" class="w-16 h-16 bg-gray-950 rounded border border-gray-800 object-contain image-render-pixel"></canvas>
-                        <span class="text-[10px] text-emerald-300 font-bold mt-1.5 uppercase">Up (Row 3)</span>
+                        <span class="text-[10px] text-emerald-300 font-bold mt-1.5 uppercase text-center">Up (Row 3)</span>
                     </div>
 
                 </div>
@@ -107,7 +107,6 @@
             background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
             background-color: #161b22;
         }
-        /* Forces crisp, non-blurry rendering layouts across mobile viewport scales */
         .image-render-pixel {
             image-rendering: -moz-crisp-edges;
             image-rendering: -webkit-crisp-edges;
@@ -120,7 +119,6 @@
         const sheetCanvas = document.getElementById('walkCanvas');
         const sheetCtx = sheetCanvas.getContext('2d');
         
-        // Monitoring Screen Elements Hooked
         const previews = {
             0: { canvas: document.getElementById('previewCanvasRight'), ctx: document.getElementById('previewCanvasRight').getContext('2d') },
             1: { canvas: document.getElementById('previewCanvasLeft'), ctx: document.getElementById('previewCanvasLeft').getContext('2d') },
@@ -128,7 +126,6 @@
             3: { canvas: document.getElementById('previewCanvasUp'), ctx: document.getElementById('previewCanvasUp').getContext('2d') }
         };
 
-        // UI Parameter Input Sliders Hooked
         const sideBodyUpload = document.getElementById('sideBodyUpload');
         const sideLegUpload = document.getElementById('sideLegUpload');
         const frontBodyUpload = document.getElementById('frontBodyUpload');
@@ -139,7 +136,6 @@
         const bounceVal = document.getElementById('bounceVal');
         const downloadBtn = document.getElementById('downloadBtn');
 
-        // Layout Constants
         const frameW = 64;
         const frameH = 64;
         const totalFrames = 8;
@@ -148,44 +144,38 @@
         sheetCanvas.width = frameW * totalFrames;
         sheetCanvas.height = frameH * totalRows;
 
-        // Reactive Image Asset Map State Storage
         let assets = { sideBody: null, sideLeg: null, frontBody: null, frontLeg: null };
 
         let strideMultiplier = 0.4;
         let bounceMultiplier = 2.0;
 
-        // Loop Pacing Flags (Calculated for a classic 12 FPS retro game feel)
         let currentPlaybackFrame = 0;
         let lastFrameTimestamp = 0;
         const fpsPlaybackInterval = 1000 / 12;
 
-        // Procedural Fallback Placeholder Asset Generator
         function createFallbackGraphic(width, height, baseHexColor, isBodyPerspective) {
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = width; tempCanvas.height = height;
             const tCtx = tempCanvas.getContext('2d');
             tCtx.fillStyle = baseHexColor; tCtx.fillRect(0, 0, width, height);
             if (isBodyPerspective) {
-                tCtx.fillStyle = '#ffffff'; tCtx.fillRect(width - 6, 4, 4, 4); // Eye node proxy
+                tCtx.fillStyle = '#ffffff'; tCtx.fillRect(width - 6, 4, 4, 4);
             }
             const imageObject = new Image();
             imageObject.src = tempCanvas.toDataURL();
             return imageObject;
         }
 
-        // Initialize Baseline Graphics
         assets.sideBody = createFallbackGraphic(24, 32, '#3b82f6', true);
         assets.sideLeg = createFallbackGraphic(8, 20, '#ef4444', false);
         assets.frontBody = createFallbackGraphic(28, 32, '#10b981', false);
         assets.frontLeg = createFallbackGraphic(9, 20, '#f59e0b', false);
 
-        // Core App Entry Pipeline Ignition
         window.onload = () => { 
             buildWalkCycle(); 
             requestAnimationFrame(renderMonitorLoop); 
         };
 
-        // Slider Reactive Pipeline Bindings
         strideSlider.addEventListener('input', (e) => {
             strideMultiplier = parseFloat(e.target.value) / 10;
             strideVal.textContent = strideMultiplier.toFixed(1);
@@ -198,7 +188,6 @@
             buildWalkCycle();
         });
 
-        // Safe Asynchronous Local Device File Parsing System
         function initializeFileUploader(fileInputElement, stateAssetKey) {
             fileInputElement.addEventListener('change', (e) => {
                 const targetFile = e.target.files[0];
@@ -209,7 +198,7 @@
                     const clientImage = new Image();
                     clientImage.onload = function() {
                         assets[stateAssetKey] = clientImage;
-                        buildWalkCycle(); // Automatically redraw on state change
+                        buildWalkCycle();
                     };
                     clientImage.src = readerEvent.target.result;
                 };
@@ -222,7 +211,6 @@
         initializeFileUploader(frontBodyUpload, 'frontBody');
         initializeFileUploader(frontLegUpload, 'frontLeg');
 
-        // Master Frame Blueprint Grid Assembly Function
         function buildWalkCycle() {
             sheetCtx.clearRect(0, 0, sheetCanvas.width, sheetCanvas.height);
 
@@ -234,36 +222,30 @@
                     const angularRadian = linearProgress * Math.PI * 2;
 
                     sheetCtx.save();
-                    // Relocate drawing baseline coordinates directly into targeted bounding cell
                     sheetCtx.translate(fx + (frameW / 2), fy + (frameH / 2));
 
                     if (r === 0 || r === 1) {
-                        // ROW IS CORRELATING TO SIDE-PROFILE MOVEMENT (0: Right, 1: Left)
-                        if (r === 1) sheetCtx.scale(-1, 1); // Transform-Mirror horizontally across central axis
+                        if (r === 1) sheetCtx.scale(-1, 1);
 
                         const leg1Rot = Math.sin(angularRadian) * strideMultiplier;
                         const leg2Rot = Math.sin(angularRadian + Math.PI) * strideMultiplier;
                         const frameBodyBobY = Math.abs(Math.sin(angularRadian * 2)) * bounceMultiplier;
 
-                        // Layer 1: Back Leg
                         sheetCtx.save();
                         sheetCtx.translate(2, 2); sheetCtx.rotate(leg2Rot);
                         sheetCtx.drawImage(assets.sideLeg, -assets.sideLeg.width / 2, 0);
                         sheetCtx.restore();
 
-                        // Layer 2: Main Torso Structural Frame
                         sheetCtx.save();
                         sheetCtx.drawImage(assets.sideBody, -assets.sideBody.width / 2, -26 + frameBodyBobY);
                         sheetCtx.restore();
 
-                        // Layer 3: Front Leg
                         sheetCtx.save();
                         sheetCtx.translate(-4, 2); sheetCtx.rotate(leg1Rot);
                         sheetCtx.drawImage(assets.sideLeg, -assets.sideLeg.width / 2, 0);
                         sheetCtx.restore();
 
                     } else {
-                        // ROW IS CORRELATING TO VERTICAL FRONT/BACK MOVEMENT (2: Down, 3: Up)
                         const leg1YTranslation = Math.sin(angularRadian) * (strideMultiplier * 8);
                         const leg2YTranslation = Math.sin(angularRadian + Math.PI) * (strideMultiplier * 8);
                         const frameBodyBobY = Math.abs(Math.sin(angularRadian * 2)) * (bounceMultiplier * 0.75);
@@ -271,11 +253,9 @@
                         const facingAwayPerspective = (r === 3);
 
                         if (!facingAwayPerspective) {
-                            // Walking Down towards screen: Legs draw behind body framework boundary
                             processFrontLegLayout(leg1YTranslation, leg2YTranslation);
                             processFrontTorsoLayout(frameBodyBobY);
                         } else {
-                            // Walking Up away from screen: Legs layer overlay on top of torso framework bounds
                             processFrontTorsoLayout(frameBodyBobY);
                             processFrontLegLayout(leg1YTranslation, leg2YTranslation);
                         }
@@ -286,11 +266,9 @@
         }
 
         function processFrontLegLayout(leftLegY, rightLegY) {
-            // Left Structural Leg Unit
             sheetCtx.save(); sheetCtx.translate(-6, 2 + leftLegY);
             sheetCtx.drawImage(assets.frontLeg, -assets.frontLeg.width / 2, 0); sheetCtx.restore();
             
-            // Right Structural Leg Unit
             sheetCtx.save(); sheetCtx.translate(6, 2 + rightLegY);
             sheetCtx.drawImage(assets.frontLeg, -assets.frontLeg.width / 2, 0); sheetCtx.restore();
         }
@@ -301,7 +279,6 @@
             sheetCtx.restore();
         }
 
-        // Live Sub-Canvas Animation Frame Cropping Loop
         function renderMonitorLoop(timestamp) {
             requestAnimationFrame(renderMonitorLoop);
 
@@ -309,7 +286,6 @@
             if (dynamicDeltaTime < fpsPlaybackInterval) return;
             lastFrameTimestamp = timestamp - (dynamicDeltaTime % fpsPlaybackInterval);
 
-            // Synchronously process playback rendering monitors across all rows 
             for (let targetRow = 0; targetRow < totalRows; targetRow++) {
                 const targetMonitor = previews[targetRow];
                 targetMonitor.ctx.clearRect(0, 0, frameW, frameH);
@@ -317,19 +293,16 @@
                 const sourceXOffset = currentPlaybackFrame * frameW;
                 const sourceYOffset = targetRow * frameH;
 
-                // Slice a sub-region directly from the master compilation sheet canvas
                 targetMonitor.ctx.drawImage(
                     sheetCanvas,
-                    sourceXOffset, sourceYOffset, frameW, frameH, // Source Sub-Coordinates
-                    0, 0, frameW, frameH                         // Destination Viewport Matrix
+                    sourceXOffset, sourceYOffset, frameW, frameH,
+                    0, 0, frameW, frameH
                 );
             }
 
-            // Advance playback frame index pointer across boundary limits
             currentPlaybackFrame = (currentPlaybackFrame + 1) % totalFrames;
         }
 
-        // Master Binary Export Download Handler 
         downloadBtn.addEventListener('click', () => {
             const clickTriggerLink = document.createElement('a');
             clickTriggerLink.download = 'modular_walkcycle_sheet.png';
