@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sprite Studio Mobile</title>
     <style>
-        /* Strict W3C Validated Base Styles */
+        /* Modern Native Dark UI Stack */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: #111827; color: #f3f4f6; min-height: 100vh; padding: 16px; display: flex; flex-direction: column; }
         
@@ -13,7 +13,6 @@
         header h1 { color: #818cf8; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 4px; }
         header p { color: #9ca3af; font-size: 0.875rem; }
 
-        /* Clean Native Flexbox/Grid Fallback Columns */
         .workspace { max-width: 1200px; width: 100%; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 24px; flex-grow: 1; align-items: start; }
         @media (min-width: 1024px) { .workspace { grid-template-columns: 1fr 2fr; } }
 
@@ -35,7 +34,6 @@
         
         .btn-export { width: 100%; background-color: #059669; color: white; font-weight: 700; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.875rem; transition: background 0.2s; min-height: 48px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
         .btn-export:hover { background-color: #10b981; }
-        .btn-export:active { background-color: #047857; }
 
         .viewport-stack { display: flex; flex-direction: column; gap: 24px; }
         
@@ -149,197 +147,200 @@
     </main>
 
     <script>
-        const sheetCanvas = document.getElementById('walkCanvas');
-        const sheetCtx = sheetCanvas.getContext('2d');
-        
-        const previews = {
-            0: { canvas: document.getElementById('previewCanvasRight'), ctx: document.getElementById('previewCanvasRight').getContext('2d') },
-            1: { canvas: document.getElementById('previewCanvasLeft'), ctx: document.getElementById('previewCanvasLeft').getContext('2d') },
-            2: { canvas: document.getElementById('previewCanvasDown'), ctx: document.getElementById('previewCanvasDown').getContext('2d') },
-            3: { canvas: document.getElementById('previewCanvasUp'), ctx: document.getElementById('previewCanvasUp').getContext('2d') }
-        };
+        // Use standard event listener to block execution until DOM is 100% ready
+        document.addEventListener("DOMContentLoaded", () => {
+            const sheetCanvas = document.getElementById('walkCanvas');
+            const sheetCtx = sheetCanvas.getContext('2d');
+            
+            const previews = {
+                0: { canvas: document.getElementById('previewCanvasRight'), ctx: document.getElementById('previewCanvasRight').getContext('2d') },
+                1: { canvas: document.getElementById('previewCanvasLeft'), ctx: document.getElementById('previewCanvasLeft').getContext('2d') },
+                2: { canvas: document.getElementById('previewCanvasDown'), ctx: document.getElementById('previewCanvasDown').getContext('2d') },
+                3: { canvas: document.getElementById('previewCanvasUp'), ctx: document.getElementById('previewCanvasUp').getContext('2d') }
+            };
 
-        const sideBodyUpload = document.getElementById('sideBodyUpload');
-        const sideLegUpload = document.getElementById('sideLegUpload');
-        const frontBodyUpload = document.getElementById('frontBodyUpload');
-        const frontLegUpload = document.getElementById('frontLegUpload');
-        const strideSlider = document.getElementById('strideSlider');
-        const bounceSlider = document.getElementById('bounceSlider');
-        const strideVal = document.getElementById('strideVal');
-        const bounceVal = document.getElementById('bounceVal');
-        const downloadBtn = document.getElementById('downloadBtn');
+            const sideBodyUpload = document.getElementById('sideBodyUpload');
+            const sideLegUpload = document.getElementById('sideLegUpload');
+            const frontBodyUpload = document.getElementById('frontBodyUpload');
+            const frontLegUpload = document.getElementById('frontLegUpload');
+            const strideSlider = document.getElementById('strideSlider');
+            const bounceSlider = document.getElementById('bounceSlider');
+            const strideVal = document.getElementById('strideVal');
+            const bounceVal = document.getElementById('bounceVal');
+            const downloadBtn = document.getElementById('downloadBtn');
 
-        const frameW = 64;
-        const frameH = 64;
-        const totalFrames = 8;
-        const totalRows = 4;
+            const frameW = 64;
+            const frameH = 64;
+            const totalFrames = 8;
+            const totalRows = 4;
 
-        sheetCanvas.width = frameW * totalFrames;
-        sheetCanvas.height = frameH * totalRows;
+            sheetCanvas.width = frameW * totalFrames;
+            sheetCanvas.height = frameH * totalRows;
 
-        let assets = { sideBody: null, sideLeg: null, frontBody: null, frontLeg: null };
-        let strideMultiplier = 0.4;
-        let bounceMultiplier = 2.0;
+            let assets = { sideBody: null, sideLeg: null, frontBody: null, frontLeg: null };
+            let strideMultiplier = 0.4;
+            let bounceMultiplier = 2.0;
 
-        let currentPlaybackFrame = 0;
-        let lastFrameTimestamp = 0;
-        const fpsPlaybackInterval = 1000 / 12;
+            let currentPlaybackFrame = 0;
+            let lastFrameTimestamp = 0;
+            const fpsPlaybackInterval = 1000 / 12;
 
-        function createFallbackGraphic(width, height, baseHexColor, isBodyPerspective) {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = width; tempCanvas.height = height;
-            const tCtx = tempCanvas.getContext('2d');
-            tCtx.fillStyle = baseHexColor; tCtx.fillRect(0, 0, width, height);
-            if (isBodyPerspective) {
-                tCtx.fillStyle = '#ffffff'; tCtx.fillRect(width - 6, 4, 4, 4);
+            function createFallbackGraphic(width, height, baseHexColor, isBodyPerspective) {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width; tempCanvas.height = height;
+                const tCtx = tempCanvas.getContext('2d');
+                tCtx.fillStyle = baseHexColor; tCtx.fillRect(0, 0, width, height);
+                if (isBodyPerspective) {
+                    tCtx.fillStyle = '#ffffff'; tCtx.fillRect(width - 6, 4, 4, 4);
+                }
+                const imageObject = new Image();
+                imageObject.src = tempCanvas.toDataURL();
+                return imageObject;
             }
-            const imageObject = new Image();
-            imageObject.src = tempCanvas.toDataURL();
-            return imageObject;
-        }
 
-        assets.sideBody = createFallbackGraphic(24, 32, '#3b82f6', true);
-        assets.sideLeg = createFallbackGraphic(8, 20, '#ef4444', false);
-        assets.frontBody = createFallbackGraphic(28, 32, '#10b981', false);
-        assets.frontLeg = createFallbackGraphic(9, 20, '#f59e0b', false);
+            // Safe initialization inside layout scope
+            assets.sideBody = createFallbackGraphic(24, 32, '#3b82f6', true);
+            assets.sideLeg = createFallbackGraphic(8, 20, '#ef4444', false);
+            assets.frontBody = createFallbackGraphic(28, 32, '#10b981', false);
+            assets.frontLeg = createFallbackGraphic(9, 20, '#f59e0b', false);
 
-        window.onload = () => { 
-            buildWalkCycle(); 
-            requestAnimationFrame(renderMonitorLoop); 
-        };
-
-        strideSlider.addEventListener('input', (e) => {
-            strideMultiplier = parseFloat(e.target.value) / 10;
-            strideVal.textContent = strideMultiplier.toFixed(1);
-            buildWalkCycle();
-        });
-
-        bounceSlider.addEventListener('input', (e) => {
-            bounceMultiplier = parseFloat(e.target.value);
-            bounceVal.textContent = bounceMultiplier.toFixed(1);
-            buildWalkCycle();
-        });
-
-        function initializeFileUploader(fileInputElement, stateAssetKey) {
-            fileInputElement.addEventListener('change', (e) => {
-                const targetFile = e.target.files[0];
-                if (!targetFile) return;
-                
-                const fileReader = new FileReader();
-                fileReader.onload = function(readerEvent) {
-                    const clientImage = new Image();
-                    clientImage.onload = function() {
-                        assets[stateAssetKey] = clientImage;
-                        buildWalkCycle();
-                    };
-                    clientImage.src = readerEvent.target.result;
-                };
-                fileReader.readAsDataURL(targetFile);
+            strideSlider.addEventListener('input', (e) => {
+                strideMultiplier = parseFloat(e.target.value) / 10;
+                strideVal.textContent = strideMultiplier.toFixed(1);
+                buildWalkCycle();
             });
-        }
 
-        initializeFileUploader(sideBodyUpload, 'sideBody');
-        initializeFileUploader(sideLegUpload, 'sideLeg');
-        initializeFileUploader(frontBodyUpload, 'frontBody');
-        initializeFileUploader(frontLegUpload, 'frontLeg');
+            bounceSlider.addEventListener('input', (e) => {
+                bounceMultiplier = parseFloat(e.target.value);
+                bounceVal.textContent = bounceMultiplier.toFixed(1);
+                buildWalkCycle();
+            });
 
-        function buildWalkCycle() {
-            sheetCtx.clearRect(0, 0, sheetCanvas.width, sheetCanvas.height);
+            function initializeFileUploader(fileInputElement, stateAssetKey) {
+                fileInputElement.addEventListener('change', (e) => {
+                    const targetFile = e.target.files[0];
+                    if (!targetFile) return;
+                    
+                    const fileReader = new FileReader();
+                    fileReader.onload = function(readerEvent) {
+                        const clientImage = new Image();
+                        clientImage.onload = function() {
+                            assets[stateAssetKey] = clientImage;
+                            buildWalkCycle();
+                        };
+                        clientImage.src = readerEvent.target.result;
+                    };
+                    fileReader.readAsDataURL(targetFile);
+                });
+            }
 
-            for (let r = 0; r < totalRows; r++) {
-                for (let c = 0; c < totalFrames; c++) {
-                    const fx = c * frameW;
-                    const fy = r * frameH;
-                    const linearProgress = c / totalFrames;
-                    const angularRadian = linearProgress * Math.PI * 2;
+            initializeFileUploader(sideBodyUpload, 'sideBody');
+            initializeFileUploader(sideLegUpload, 'sideLeg');
+            initializeFileUploader(frontBodyUpload, 'frontBody');
+            initializeFileUploader(frontLegUpload, 'frontLeg');
 
-                    sheetCtx.save();
-                    sheetCtx.translate(fx + (frameW / 2), fy + (frameH / 2));
+            function buildWalkCycle() {
+                sheetCtx.clearRect(0, 0, sheetCanvas.width, sheetCanvas.height);
 
-                    if (r === 0 || r === 1) {
-                        if (r === 1) sheetCtx.scale(-1, 1);
-
-                        const leg1Rot = Math.sin(angularRadian) * strideMultiplier;
-                        const leg2Rot = Math.sin(angularRadian + Math.PI) * strideMultiplier;
-                        const frameBodyBobY = Math.abs(Math.sin(angularRadian * 2)) * bounceMultiplier;
+                for (let r = 0; r < totalRows; r++) {
+                    for (let c = 0; c < totalFrames; c++) {
+                        const fx = c * frameW;
+                        const fy = r * frameH;
+                        const linearProgress = c / totalFrames;
+                        const angularRadian = linearProgress * Math.PI * 2;
 
                         sheetCtx.save();
-                        sheetCtx.translate(2, 2); sheetCtx.rotate(leg2Rot);
-                        sheetCtx.drawImage(assets.sideLeg, -assets.sideLeg.width / 2, 0);
-                        sheetCtx.restore();
+                        sheetCtx.translate(fx + (frameW / 2), fy + (frameH / 2));
 
-                        sheetCtx.save();
-                        sheetCtx.drawImage(assets.sideBody, -assets.sideBody.width / 2, -26 + frameBodyBobY);
-                        sheetCtx.restore();
+                        if (r === 0 || r === 1) {
+                            if (r === 1) sheetCtx.scale(-1, 1);
 
-                        sheetCtx.save();
-                        sheetCtx.translate(-4, 2); sheetCtx.rotate(leg1Rot);
-                        sheetCtx.drawImage(assets.sideLeg, -assets.sideLeg.width / 2, 0);
-                        sheetCtx.restore();
+                            const leg1Rot = Math.sin(angularRadian) * strideMultiplier;
+                            const leg2Rot = Math.sin(angularRadian + Math.PI) * strideMultiplier;
+                            const frameBodyBobY = Math.abs(Math.sin(angularRadian * 2)) * bounceMultiplier;
 
-                    } else {
-                        const leg1YTranslation = Math.sin(angularRadian) * (strideMultiplier * 8);
-                        const leg2YTranslation = Math.sin(angularRadian + Math.PI) * (strideMultiplier * 8);
-                        const frameBodyBobY = Math.abs(Math.sin(angularRadian * 2)) * (bounceMultiplier * 0.75);
+                            sheetCtx.save();
+                            sheetCtx.translate(2, 2); sheetCtx.rotate(leg2Rot);
+                            sheetCtx.drawImage(assets.sideLeg, -assets.sideLeg.width / 2, 0);
+                            sheetCtx.restore();
 
-                        const facingAwayPerspective = (r === 3);
+                            sheetCtx.save();
+                            sheetCtx.drawImage(assets.sideBody, -assets.sideBody.width / 2, -26 + frameBodyBobY);
+                            sheetCtx.restore();
 
-                        if (!facingAwayPerspective) {
-                            processFrontLegLayout(leg1YTranslation, leg2YTranslation);
-                            processFrontTorsoLayout(frameBodyBobY);
+                            sheetCtx.save();
+                            sheetCtx.translate(-4, 2); sheetCtx.rotate(leg1Rot);
+                            sheetCtx.drawImage(assets.sideLeg, -assets.sideLeg.width / 2, 0);
+                            sheetCtx.restore();
+
                         } else {
-                            processFrontTorsoLayout(frameBodyBobY);
-                            processFrontLegLayout(leg1YTranslation, leg2YTranslation);
+                            const leg1YTranslation = Math.sin(angularRadian) * (strideMultiplier * 8);
+                            const leg2YTranslation = Math.sin(angularRadian + Math.PI) * (strideMultiplier * 8);
+                            const frameBodyBobY = Math.abs(Math.sin(angularRadian * 2)) * (bounceMultiplier * 0.75);
+
+                            const facingAwayPerspective = (r === 3);
+
+                            if (!facingAwayPerspective) {
+                                processFrontLegLayout(leg1YTranslation, leg2YTranslation);
+                                processFrontTorsoLayout(frameBodyBobY);
+                            } else {
+                                processFrontTorsoLayout(frameBodyBobY);
+                                processFrontLegLayout(leg1YTranslation, leg2YTranslation);
+                            }
                         }
+                        sheetCtx.restore();
                     }
-                    sheetCtx.restore();
                 }
             }
-        }
 
-        function processFrontLegLayout(leftLegY, rightLegY) {
-            sheetCtx.save(); sheetCtx.translate(-6, 2 + leftLegY);
-            sheetCtx.drawImage(assets.frontLeg, -assets.frontLeg.width / 2, 0); sheetCtx.restore();
-            
-            sheetCtx.save(); sheetCtx.translate(6, 2 + rightLegY);
-            sheetCtx.drawImage(assets.frontLeg, -assets.frontLeg.width / 2, 0); sheetCtx.restore();
-        }
-
-        function processFrontTorsoLayout(bobYValue) {
-            sheetCtx.save(); 
-            sheetCtx.drawImage(assets.frontBody, -assets.frontBody.width / 2, -26 + bobYValue); 
-            sheetCtx.restore();
-        }
-
-        function renderMonitorLoop(timestamp) {
-            requestAnimationFrame(renderMonitorLoop);
-
-            const dynamicDeltaTime = timestamp - lastFrameTimestamp;
-            if (dynamicDeltaTime < fpsPlaybackInterval) return;
-            lastFrameTimestamp = timestamp - (dynamicDeltaTime % fpsPlaybackInterval);
-
-            for (let targetRow = 0; targetRow < totalRows; targetRow++) {
-                const targetMonitor = previews[targetRow];
-                targetMonitor.ctx.clearRect(0, 0, frameW, frameH);
-
-                const sourceXOffset = currentPlaybackFrame * frameW;
-                const sourceYOffset = targetRow * frameH;
-
-                targetMonitor.ctx.drawImage(
-                    sheetCanvas,
-                    sourceXOffset, sourceYOffset, frameW, frameH,
-                    0, 0, frameW, frameH
-                );
+            function processFrontLegLayout(leftLegY, rightLegY) {
+                sheetCtx.save(); sheetCtx.translate(-6, 2 + leftLegY);
+                sheetCtx.drawImage(assets.frontLeg, -assets.frontLeg.width / 2, 0); sheetCtx.restore();
+                
+                sheetCtx.save(); sheetCtx.translate(6, 2 + rightLegY);
+                sheetCtx.drawImage(assets.frontLeg, -assets.frontLeg.width / 2, 0); sheetCtx.restore();
             }
 
-            currentPlaybackFrame = (currentPlaybackFrame + 1) % totalFrames;
-        }
+            function processFrontTorsoLayout(bobYValue) {
+                sheetCtx.save(); 
+                sheetCtx.drawImage(assets.frontBody, -assets.frontBody.width / 2, -26 + bobYValue); 
+                sheetCtx.restore();
+            }
 
-        downloadBtn.addEventListener('click', () => {
-            const clickTriggerLink = document.createElement('a');
-            clickTriggerLink.download = 'modular_walkcycle_sheet.png';
-            clickTriggerLink.href = sheetCanvas.toDataURL('image/png');
-            clickTriggerLink.click();
+            function renderMonitorLoop(timestamp) {
+                requestAnimationFrame(renderMonitorLoop);
+
+                const dynamicDeltaTime = timestamp - lastFrameTimestamp;
+                if (dynamicDeltaTime < fpsPlaybackInterval) return;
+                lastFrameTimestamp = timestamp - (dynamicDeltaTime % fpsPlaybackInterval);
+
+                for (let targetRow = 0; targetRow < totalRows; targetRow++) {
+                    const targetMonitor = previews[targetRow];
+                    targetMonitor.ctx.clearRect(0, 0, frameW, frameH);
+
+                    const sourceXOffset = currentPlaybackFrame * frameW;
+                    const sourceYOffset = targetRow * frameH;
+
+                    targetMonitor.ctx.drawImage(
+                        sheetCanvas,
+                        sourceXOffset, sourceYOffset, frameW, frameH,
+                        0, 0, frameW, frameH
+                    );
+                }
+
+                currentPlaybackFrame = (currentPlaybackFrame + 1) % totalFrames;
+            }
+
+            downloadBtn.addEventListener('click', () => {
+                const clickTriggerLink = document.createElement('a');
+                clickTriggerLink.download = 'modular_walkcycle_sheet.png';
+                clickTriggerLink.href = sheetCanvas.toDataURL('image/png');
+                clickTriggerLink.click();
+            });
+
+            // Trigger initial loop kickstarts safely
+            buildWalkCycle(); 
+            requestAnimationFrame(renderMonitorLoop);
         });
     </script>
 </body>
