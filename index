@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced 4-Direction Sprite Sheet Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col p-4">
+
+    <header class="mb-6 text-center">
+        <h1 class="text-2xl font-bold text-indigo-400">4-Direction Modular Generator</h1>
+        <p class="text-sm text-gray-400">Upload profile and front-facing view layers</p>
+    </header>
+
+    <main class="max-w-5xl mx-auto w-full flex flex-col gap-6">
+        
+        <div class="bg-gray-800 p-4 rounded-xl shadow-xl flex flex-col items-center">
+            <h2 class="text-md font-semibold mb-2 self-start text-gray-300">Generated Sheets (4 Rows x 8 Frames)</h2>
+            <div class="w-full overflow-auto bg-gray-950 p-4 rounded-lg border border-gray-700 flex justify-center checkered-bg">
+                <canvas id="walkCanvas" class="max-w-full h-auto"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-5 rounded-xl shadow-xl flex flex-col gap-5">
+            <h2 class="text-lg font-semibold border-b border-gray-700 pb-2">Character Asset Management</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <h3 class="text-sm font-bold text-indigo-400 uppercase tracking-wider">Side / Profile View Assets</h3>
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                        <label class="block text-xs font-medium mb-2 text-gray-300">Side Torso / Head</label>
+                        <input type="file" id="sideBodyUpload" accept="image/*" class="w-full text-xs text-gray-400 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-indigo-600 file:text-white cursor-pointer">
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                        <label class="block text-xs font-medium mb-2 text-gray-300">Side Leg</label>
+                        <input type="file" id="sideLegUpload" accept="image/*" class="w-full text-xs text-gray-400 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-indigo-600 file:text-white cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Front / Back View Assets</h3>
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                        <label class="block text-xs font-medium mb-2 text-gray-300">Front Torso / Head</label>
+                        <input type="file" id="frontBodyUpload" accept="image/*" class="w-full text-xs text-gray-400 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-emerald-600 file:text-white cursor-pointer">
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                        <label class="block text-xs font-medium mb-2 text-gray-300">Front Leg</label>
+                        <input type="file" id="frontLegUpload" accept="image/*" class="w-full text-xs text-gray-400 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-emerald-600 file:text-white cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 mt-2">
+                <button id="generateBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg transition min-h-[48px]">
+                    Rebuild Sprite Sheet
+                </button>
+                <button id="downloadBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-lg transition min-h-[48px]">
+                    Download Complete PNG
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        .checkered-bg {
+            background-image: linear-gradient(45deg, #111827 25%, transparent 25%), linear-gradient(-45deg, #111827 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #111827 75%), linear-gradient(-45deg, transparent 75%, #111827 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            background-color: #1f2937;
+        }
+    </style>
+
+    <script>
+        const canvas = document.getElementById('walkCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Document Hooking UI elements
+        const sideBodyUpload = document.getElementById('sideBodyUpload');
+        const sideLegUpload = document.getElementById('sideLegUpload');
+        const frontBodyUpload = document.getElementById('frontBodyUpload');
+        const frontLegUpload = document.getElementById('frontLegUpload');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        const frameW = 64;
+        const frameH = 64;
+        const totalFrames = 8;
+        const totalRows = 4; // 0: Right, 1: Left, 2: Down, 3: Up
+
+        canvas.width = frameW * totalFrames;
+        canvas.height = frameH * totalRows;
+
+        // Structured state storage for image elements
+        let assets = {
+            sideBody: null,
+            sideLeg: null,
+            frontBody: null,
+            frontLeg: null
+        };
+
+        // Helper fallback asset creator
+        function createPlaceholder(width, height, color, hasFacingDetails) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width; tempCanvas.height = height;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.fillStyle = color; tCtx.fillRect(0, 0, width, height);
+            if (hasFacingDetails) {
+                tCtx.fillStyle = '#ffffff'; 
+                tCtx.fillRect(width - 6, 4, 4, 4); // Side face eye marker
+            }
+            const img = new Image();
+            img.src = tempCanvas.toDataURL();
+            return img;
+        }
+
+        // Generate baseline functional mock graphics
+        assets.sideBody = createPlaceholder(24, 32, '#3b82f6', true);
+        assets.sideLeg = createPlaceholder(8, 20, '#ef4444', false);
+        assets.frontBody = createPlaceholder(28, 32, '#10b981', false);
+        assets.frontLeg = createPlaceholder(9, 20, '#f59e0b', false);
+
+        window.onload = () => { buildWalkCycle(); };
+
+        function mapUpload(inputElement, targetAssetKey) {
+            inputElement.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        assets[targetAssetKey] = img;
+                        buildWalkCycle();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Initialize active tracking listener updates per upload field
+        mapUpload(sideBodyUpload, 'sideBody');
+        mapUpload(sideLegUpload, 'sideLeg');
+        mapUpload(frontBodyUpload, 'frontBody');
+        mapUpload(frontLegUpload, 'frontLeg');
+
+        function buildWalkCycle() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let row = 0; row < totalRows; row++) {
+                for (let col = 0; col < totalFrames; col++) {
+                    const frameX = col * frameW;
+                    const frameY = row * frameH;
+                    const progress = col / totalFrames;
+                    const angle = progress * Math.PI * 2;
+
+                    ctx.save();
+                    ctx.translate(frameX + (frameW / 2), frameY + (frameH / 2));
+
+                    // --- PERSPECTIVE ROUTING MECHANICS ---
+                    if (row === 0 || row === 1) {
+                        // PROFILE INTERACTION MODE (Right/Left)
+                        if (row === 1) ctx.scale(-1, 1); // Flip horizontally for Left direction
+
+                        const leg1Rot = Math.sin(angle) * 0.4;
+                        const leg2Rot = Math.sin(angle + Math.PI) * 0.4;
+                        const bodyBob = Math.abs(Math.sin(angle * 2)) * 2;
+
+                        // Layer 1: Back Leg
+                        ctx.save();
+                        ctx.translate(2, 2); ctx.rotate(leg2Rot);
+                        ctx.drawImage(assets.sideLeg, -assets.sideLeg.width / 2, 0);
+                        ctx.restore();
+
+                        // Layer 2: Torso
+                        ctx.save();
+                        ctx.drawImage(assets.sideBody, -assets.sideBody.width / 2, -26 + bodyBob);
+                        ctx.restore();
+
+                        // Layer 3: Front Leg
+                        ctx.save();
+                        ctx.translate(-4, 2); ctx.rotate(leg1Rot);
+                        ctx.drawImage(assets.sideLeg, -assets.sideLeg.width / 2, 0);
+                        ctx.restore();
+
+                    } else {
+                        // FORWARD/BACKWARD INTERACTION MODE (Down/Up)
+                        // Vertical movement loops stretch/compress the legs vertically instead of rotating out wide
+                        const leg1YOffset = Math.sin(angle) * 3;
+                        const leg2YOffset = Math.sin(angle + Math.PI) * 3;
+                        const bodyBob = Math.abs(Math.sin(angle * 2)) * 1.5;
+
+                        const isUpDirection = (row === 3);
+
+                        // Structural Layering Logic Adjustment:
+                        // When walking away (Up), the legs should appear visually positioned in front of the back/torso framework.
+                        if (!isUpDirection) {
+                            // Walking Down: Draw Leg layers FIRST (behind body)
+                            drawFrontLegs(leg1YOffset, leg2YOffset);
+                            drawFrontTorso(bodyBob);
+                        } else {
+                            // Walking Up: Draw Torso FIRST (Legs drawn on top to hide lower back curve line cuts)
+                            drawFrontTorso(bodyBob);
+                            drawFrontLegs(leg1YOffset, leg2YOffset);
+                        }
+                    }
+
+                    ctx.restore();
+                }
+            }
+        }
+
+        function drawFrontLegs(l1Y, l2Y) {
+            // Left Hip Slot Leg
+            ctx.save();
+            ctx.translate(-6, 2 + l1Y);
+            ctx.drawImage(assets.frontLeg, -assets.frontLeg.width / 2, 0);
+            ctx.restore();
+
+            // Right Hip Slot Leg
+            ctx.save();
+            ctx.translate(6, 2 + l2Y);
+            ctx.drawImage(assets.frontLeg, -assets.frontLeg.width / 2, 0);
+            ctx.restore();
+        }
+
+        function drawFrontTorso(bob) {
+            ctx.save();
+            ctx.drawImage(assets.frontBody, -assets.frontBody.width / 2, -26 + bob);
+            ctx.restore();
+        }
+
+        generateBtn.addEventListener('click', buildWalkCycle);
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = '4direction_spritesheet.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>
